@@ -1,0 +1,914 @@
+function main(workbook: ExcelScript.Workbook) {
+  // Your code here
+  let sheet5 = workbook.getWorksheet("Holidays")
+  let range1 = sheet5.getUsedRange().getRowCount()
+  // console.log(range1)
+  let holidayDates = sheet5.getRange(`C2:C${range1}`).getValues()
+  const indianHolidays = [
+    '31-10-2024', '2024-01-01', '2024-01-26', '2024-08-15', '2024-10-02', '2024-12-25', '2024-11-01', '2024-05-01', '2023-04-09'
+  ]
+  // const indianHolidays:string[]=[]
+  // for(let i=0;i<range1-1;i++){
+  //   let date=dateFormat(holidayDates[i][0] as number)
+  //   indianHolidays[i]=date
+
+  // }
+  // console.log(indianHolidays)
+
+
+  let sheet3 = workbook.getWorksheet("Employee details");
+
+  let sheet4 = workbook.getWorksheet("leave sumary 1")
+  let range = sheet3.getUsedRange().getRowCount();
+
+
+  let sino = sheet3.getRange(`A2:A${range}`).getValues();
+  let dob = sheet3.getRange(`B2:B${range}`).getValues();
+
+  // console.log(sino);
+
+  let name = sheet3.getRange(`C2:C${range}`).getValues();
+
+  let f_name = sheet3.getRange(`D2:D${range}`).getValues();
+
+  let address = sheet3.getRange(`E2:E${range}`).getValues();
+
+  // for (let i = 0; i < range-1; i++) {
+
+  sheet4.getRange("E3").setValue(sino[0][0]);
+  let d1 = dateFormat(dob[0][0] as number);
+  sheet4.getRange("J3").setValue(d1);
+  sheet4.getRange("C5").setValue(name[0][0]);
+  sheet4.getRange("I5").setValue(f_name[0][0]);
+  sheet4.getRange("C7").setValue(address[0][0]);
+
+  //------------------------------------------------------------------
+  let sheet1 = workbook.getWorksheet("Employee Leaves")
+  let sheet2 = workbook.getWorksheet("leave sumary 1")
+
+  let count1 = sheet1.getUsedRange().getRowCount();
+
+  let l_from = sheet1.getRange(`B2:B${count1}`).getValues()
+  let to = sheet1.getRange(`C2:C${count1}`).getValues()
+
+  //------------------------------------------------------------------
+  //HOLIDAY CALCULATION START
+  let months = [45292, 45323, 45352, 45383, 45413, 45444, 45474, 45505, 45536, 45596, 45597, 45627]
+  //  start of working days expect sunday and saturday
+  for (let i = 0; i < months.length; i++) {
+
+    let excelDateValue = dateFormat(months[i] as number)
+
+    let date = new Date(excelDateValue)
+
+    let month = date.getMonth() + 1
+    // console.log(month)
+
+    let year = date.getFullYear()
+    let start = new Date(year, month - 1, 1)
+    let end = new Date(year, month, 0)
+    let total = 0
+    for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+      if (d.getDay() !== 0 && d.getDay() !== 6) {
+        total++
+      }
+    }
+    // console.log(total)
+    //----------------------------------------------------------------    
+    // checking the festival and Govt holidays are fall in sunday or saturday
+    function isSundayOrSaturday(d1: string): boolean {
+      const date = new Date(d1)
+      const dayOfWeek = date.getDay()
+      return dayOfWeek === 0 || dayOfWeek === 6
+    }
+    //checking for govt holidays are fall in sun or sat
+    function countGovtHolidayInMonth(d2: string, holidays: string[]): number {
+      const date = new Date(d2);
+      const month = date.getMonth()
+      const year = date.getFullYear()
+      let count = 0;
+      for (const holiday of holidays) {
+        const holyDate = new Date(holiday)
+        if (holyDate.getMonth() === month && holyDate.getFullYear() === year) {
+          if (isSundayOrSaturday(holiday)) {
+            count = 1
+            break
+          }
+
+        }
+      }
+      return count
+
+    }
+
+    let holy11 = excelDateValue
+    const result = countGovtHolidayInMonth(holy11, indianHolidays)
+    // console.log(result)
+
+
+
+
+
+
+
+
+    //--------------------------------------------------------------
+    // checking the Govt holiday and festival
+
+    let holy1 = excelDateValue
+    let month1 = holy1.split("-")
+    if (month1[0] == "04" || month1[0] == "05" || month1[0] == "08" || month1[0] == "11" || month1[0] == "12") {
+      //here we subtracting the result in total bcz if Govt holidays are on sunday or saturaday then working day is increasing if not decreasing
+      sheet2.getRange(`D${15 + i}`).setValue(total - 1 + result)
+    }
+    if (month1[0] == "01" || month1[0] == "10") {
+      sheet2.getRange(`D${15 + i}`).setValue(total - 2 + result)
+    }
+    if (month1[0] == "02" || month1[0] == "03" || month1[0] == "06" || month1[0] == "07" || month1[0] == "09") {
+      sheet2.getRange(`D${15 + i}`).setValue(total)
+    }
+
+
+    //HOLIDAY CALCULATION END
+    if (month1[0] == "01" || month1[0] == "03" || month1[0] == "05" || month1[0] == "07" || month1[0] == "08" || month1[0] == "10" || month1[0] == "12") {
+      const b = changeDay(excelDateValue, "01")
+      sheet2.getRange(`B${15 + i}`).setValue(b)
+      const q1 = changeDay(excelDateValue, "31")
+      sheet2.getRange(`C${15 + i}`).setValue(q1)
+      sheet2.getRange(`K${15 + i}`).setValue(q1)
+
+    }
+    //checking the months which have 30 days
+    if (month1[0] == "04" || month1[0] == "06" || month1[0] == "09" || month1[0] == "11") {
+      const b = changeDay(excelDateValue, "01")
+      sheet2.getRange(`B${15 + i}`).setValue(b)
+      const q = changeDay(excelDateValue, "30")
+      sheet2.getRange(`C${15 + i}`).setValue(q)
+      sheet2.getRange(`K${15 + i}`).setValue(q)
+
+
+    }
+    if (month1[0] == "02") {
+      // checking the leap year
+      if (Number(month1[2]) % 4 != 0) {
+        const b = changeDay(excelDateValue, "01")
+        sheet2.getRange(`B${15 + i}`).setValue(b)
+        const q = changeDay(excelDateValue, "28")
+        sheet2.getRange(`C${15 + i}`).setValue(q)
+        sheet2.getRange(`K${15 + i}`).setValue(q)
+
+      }
+      if (Number(month1[2]) % 4 == 0) {
+        const b = changeDay(excelDateValue, "01")
+        sheet2.getRange(`B${15 + i}`).setValue(b)
+        const q = changeDay(excelDateValue, "29")
+        sheet2.getRange(`C${15 + i}`).setValue(q)
+        sheet2.getRange(`K${15 + i}`).setValue(q)
+
+      }
+
+    }
+
+  }
+
+  //-----------------------------------------------------
+  // for (let i = 0; i < 12; i++) {
+  //   sheet2.getRange(`I${15 + i}`).setValue(0)
+  //   sheet2.getRange(`G${15 + i}`).setValue("           -")
+  //   sheet2.getRange(`H${15 + i}`).setValue("           -")
+  // }
+  //-----------------------------------------------------
+  // start of  leave days, start date,end date day
+  for (let i = 0; i < count1 - 1; i++) {
+    let str1 = l_from[i][0];
+    let str2 = to[i][0];
+    
+
+    let s1 = dateFormat(Number(str1))
+    let s2 = dateFormat(Number(str2))
+    const month = s1.split("-");
+    const month1 = s2.split("-")
+    // const di = (Number(month1[1]) - Number(month[1]))
+    // console.log(s1)
+    if (month[0] === month1[0]) {
+      const di = (new Date(s2).getTime() - new Date(s1).getTime()) / (1000 * 3600 * 24) + 1
+      // console.log(di)
+
+      //check Govt or festival holidays in leaves 
+      let holiday = checkLeavesOnHolidays(s1, s2, indianHolidays)
+      let week = checkWeekend(s1, s2)// check sunday or saturday in leaves
+      let final = di - week - holiday;
+      // console.log(final)
+
+      if (month[0] == "01") {
+        let cur1 = sheet2.getRange("G15").getValue()
+        let cur2 = sheet2.getRange("H15").getValue()
+        let cur3 = sheet2.getRange("I15").getValue() as string
+
+        sheet2.getRange("G15").setValue(cur1 + dateConverter(s1) + '\n')
+        sheet2.getRange("H15").setValue(cur2 + dateConverter(s2) + '\n')
+        sheet2.getRange("I15").setValue(cur3 + final + '\n')
+        // sheet2.getRange(`G${15}`).setValue(s1)
+        // sheet2.getRange(`H${15}`).setValue(s2)
+        // sheet2.getRange(`I${15}`).setValue(final)
+      }
+      if (month[0] == "02") {
+        let cur1 = sheet2.getRange("G16").getValue()
+        let cur2 = sheet2.getRange("H16").getValue()
+        let cur3 = sheet2.getRange("I16").getValue() as string
+
+        sheet2.getRange("G16").setValue(cur1 + dateConverter(s1) + '\n')
+        sheet2.getRange("H16").setValue(cur2 + dateConverter(s2) + '\n')
+        sheet2.getRange("I16").setValue(cur3 + final + '\n')
+        // sheet2.getRange(`G${16}`).setValue(s1)
+        // sheet2.getRange(`H${16}`).setValue(s2)
+        // sheet2.getRange(`I${16}`).setValue(final)
+      }
+      if (month[0] == "03") {
+        let cur1=sheet2.getRange("G17").getValue()
+        let cur2 = sheet2.getRange("H17").getValue()
+        let cur3= sheet2.getRange("I17").getValue() as string
+
+        sheet2.getRange("G17").setValue(cur1 + dateConverter(s1)+'\n')
+        sheet2.getRange("H17").setValue(cur2 + dateConverter(s2) + '\n')
+        sheet2.getRange("I17").setValue(cur3 + final + '\n')
+
+        // sheet2.getRange(`G${17}`).setValue(s1)
+        // sheet2.getRange(`H${17}`).setValue(s2)
+        // sheet2.getRange(`I${17}`).setValue(final)
+      }
+      if (month[0] == "04") {
+
+        let cur1 = sheet2.getRange("G18").getValue()
+        let cur2 = sheet2.getRange("H18").getValue()
+        let cur3 = sheet2.getRange("I18").getValue() as string
+
+        sheet2.getRange("G18").setValue(cur1 + dateConverter(s1) + '\n')
+        sheet2.getRange("H18").setValue(cur2 + dateConverter(s2) + '\n')
+        sheet2.getRange("I18").setValue(cur3 + final + '\n')
+        // sheet2.getRange(`G${18}`).setValue(s1)
+        // sheet2.getRange(`H${18}`).setValue(s2)
+        // sheet2.getRange(`I${18}`).setValue(final)
+      }
+      if (month[0] == "05") {
+
+        let cur1 = sheet2.getRange("G19").getValue()
+        let cur2 = sheet2.getRange("H19").getValue()
+        let cur3 = sheet2.getRange("I19").getValue() as string
+
+        sheet2.getRange("G19").setValue(cur1 + dateConverter(s1) + '\n')
+        sheet2.getRange("H19").setValue(cur2 + dateConverter(s2) + '\n')
+        sheet2.getRange("I19").setValue(cur3 + final + '\n')
+        // sheet2.getRange(`G${19}`).setValue(s1)
+        // sheet2.getRange(`H${19}`).setValue(s2)
+        // sheet2.getRange(`I${19}`).setValue(final)
+      }
+      if (month[0] == "06") {
+        let cur1 = sheet2.getRange("G20").getValue()
+        let cur2 = sheet2.getRange("H20").getValue()
+        let cur3 = sheet2.getRange("I20").getValue() as string
+
+        sheet2.getRange("G20").setValue(cur1 + dateConverter(s1) + '\n')
+        sheet2.getRange("H20").setValue(cur2 + dateConverter(s2) + '\n')
+        sheet2.getRange("I20").setValue(cur3 + final + '\n')
+        // sheet2.getRange(`G${20}`).setValue(s1)
+        // sheet2.getRange(`H${20}`).setValue(s2)
+        // sheet2.getRange(`I${20}`).setValue(final)
+      }
+      if (month[0] == "07") {
+        let cur1 = sheet2.getRange("G21").getValue()
+        let cur2 = sheet2.getRange("H21").getValue()
+        let cur3 = sheet2.getRange("I21").getValue() as string
+
+        sheet2.getRange("G21").setValue(cur1 + dateConverter(s1) + '\n')
+        sheet2.getRange("H21").setValue(cur2 + dateConverter(s2) + '\n')
+        sheet2.getRange("I21").setValue(cur3 + final + '\n')
+        // sheet2.getRange(`G${21}`).setValue(s1)
+        // sheet2.getRange(`H${21}`).setValue(s2)
+        // sheet2.getRange(`I${21}`).setValue(final)
+      }
+      if (month[0] == "08") {
+        let cur1 = sheet2.getRange("G22").getValue()
+        let cur2 = sheet2.getRange("H22").getValue()
+        let cur3 = sheet2.getRange("I22").getValue() as string
+
+        sheet2.getRange("G22").setValue(cur1 + dateConverter(s1) + '\n')
+        sheet2.getRange("H22").setValue(cur2 + dateConverter(s2) + '\n')
+        sheet2.getRange("I22").setValue(cur3 + final + '\n')
+        // sheet2.getRange(`G${22}`).setValue(s1)
+        // sheet2.getRange(`H${22}`).setValue(s2)
+        // sheet2.getRange(`I${22}`).setValue(final)
+      }
+      if (month[0] == "09") {
+        let cur1 = sheet2.getRange("G23").getValue()
+        let cur2 = sheet2.getRange("H23").getValue()
+        let cur3 = sheet2.getRange("I23").getValue() as string
+
+        sheet2.getRange("G23").setValue(cur1 + dateConverter(s1) + '\n')
+        sheet2.getRange("H23").setValue(cur2 + dateConverter(s2) + '\n')
+        sheet2.getRange("I23").setValue(cur3 + final + '\n')
+        // sheet2.getRange(`G${23}`).setValue(s1)
+        // sheet2.getRange(`H${23}`).setValue(s2)
+        // sheet2.getRange(`I${23}`).setValue(final)
+      }
+      if (month[0] == "10") {
+        let cur1 = sheet2.getRange("G24").getValue()
+        let cur2 = sheet2.getRange("H24").getValue()
+        let cur3 = sheet2.getRange("I24").getValue() as string
+
+        sheet2.getRange("G24").setValue(cur1 + dateConverter(s1) + '\n')
+        sheet2.getRange("H24").setValue(cur2 + dateConverter(s2) + '\n')
+        sheet2.getRange("I24").setValue(cur3 + final + '\n')
+        // sheet2.getRange(`G${24}`).setValue(s1)
+        // sheet2.getRange(`H${24}`).setValue(s2)
+        // sheet2.getRange(`I${24}`).setValue(final)
+      }
+      if (month[0] == "11") {
+        let cur1 = sheet2.getRange("G25").getValue()
+        let cur2 = sheet2.getRange("H25").getValue()
+        let cur3 = sheet2.getRange("I25").getValue() as string
+
+        sheet2.getRange("G25").setValue(cur1 + dateConverter(s1) + '\n')
+        sheet2.getRange("H25").setValue(cur2 + dateConverter(s2) + '\n')
+        sheet2.getRange("I25").setValue(cur3 + final + '\n')
+        // sheet2.getRange(`G${25}`).setValue(s1)
+        // sheet2.getRange(`H${25}`).setValue(s2)
+        // sheet2.getRange(`I${25}`).setValue(final)
+      }
+      if (month[0] == "12") {
+        let cur1 = sheet2.getRange("G26").getValue()
+        let cur2 = sheet2.getRange("H26").getValue()
+        let cur3 = sheet2.getRange("I26").getValue() as string
+
+        sheet2.getRange("G26").setValue(cur1 + (s1) + '\n')
+        sheet2.getRange("H26").setValue(cur2 + (s2) + '\n')
+        sheet2.getRange("I26").setValue(cur3 + final + '\n')
+        // sheet2.getRange(`G${26}`).setValue(s1)
+        // sheet2.getRange(`H${26}`).setValue(s2)
+        // sheet2.getRange(`I${26}`).setValue(final)
+      }
+    }
+    if (month[0] != month1[0]) {
+
+      if (month[0] == "02") {
+        if (Number(month[2]) % 4 == 0) {
+          const s2 = changeDay(s1, "29")
+          const di = (new Date(s2).getTime() - new Date(s1).getTime()) / (1000 * 3600 * 24) + 1
+          let holiday = checkLeavesOnHolidays(s1, s2, indianHolidays)
+          let week = checkWeekend(s1, s2)
+          let final = di - week - holiday;
+          let cur1 = sheet2.getRange("G16").getValue()
+          let cur2 = sheet2.getRange("H16").getValue()
+          let cur3 = sheet2.getRange("I16").getValue() as string
+
+          sheet2.getRange("G16").setValue(cur1 + dateConverter(s1) + '\n')
+          sheet2.getRange("H16").setValue(cur2 + dateConverter(s2) + '\n')
+          sheet2.getRange("I16").setValue(cur3 + final + '\n')
+          
+          // sheet2.getRange(`G${16}`).setValue(s1)
+          // sheet2.getRange(`H${16}`).setValue(s2)
+          // sheet2.getRange(`I${16}`).setValue(final)
+
+        }
+        if (Number(month[2]) % 4 != 0) {
+          const s2 = changeDay(s1, "28")
+          const di = (new Date(s2).getTime() - new Date(s1).getTime()) / (1000 * 3600 * 24) + 1
+          let holiday = checkLeavesOnHolidays(s1, s2, indianHolidays)
+          let week = checkWeekend(s1, s2)
+          let final = di - week - holiday;
+
+          let cur1 = sheet2.getRange("G16").getValue()
+          let cur2 = sheet2.getRange("H16").getValue()
+          let cur3 = sheet2.getRange("I16").getValue() as string
+
+          sheet2.getRange("G16").setValue(cur1 + dateConverter(s1) + '\n')
+          sheet2.getRange("H16").setValue(cur2 + dateConverter(s2) + '\n')
+          sheet2.getRange("I16").setValue(cur3 + final + '\n')  
+          // sheet2.getRange(`G${16}`).setValue(s1)
+          // sheet2.getRange(`H${16}`).setValue(s2)
+          // sheet2.getRange(`I${16}`).setValue(final)
+
+        }
+      }
+      if (month[0] == "01" || month[0] == "03" || month[0] == "05" || month[0] == "07" || month[0] == "08" || month[0] == "10" || month[0] == "12") {
+        const s2 = changeDay(s1, "31")
+        const di = (new Date(s2).getTime() - new Date(s1).getTime()) / (1000 * 3600 * 24) + 1
+        let holiday = checkLeavesOnHolidays(s1, s2, indianHolidays)
+        let week = checkWeekend(s1, s2)
+        let final = di - week - holiday;
+        if (month[0] == "01") {
+          let cur1 = sheet2.getRange("G15").getValue()
+          let cur2 = sheet2.getRange("H15").getValue()
+          let cur3 = sheet2.getRange("I15").getValue() as string
+
+          sheet2.getRange("G15").setValue(cur1 + dateConverter(s1) + '\n')
+          sheet2.getRange("H15").setValue(cur2 + dateConverter(s2) + '\n')
+          sheet2.getRange("I15").setValue(cur3 + final + '\n')
+          // sheet2.getRange(`G${15}`).setValue(s1)
+          // sheet2.getRange(`H${15}`).setValue(s2)
+          // sheet2.getRange(`I${15}`).setValue(final)
+        }
+        if (month[0] == "03") {
+          let cur1 = sheet2.getRange("G17").getValue()
+          let cur2 = sheet2.getRange("H17").getValue()
+          let cur3 = sheet2.getRange("I17").getValue() as string
+
+          sheet2.getRange("G17").setValue(cur1 + dateConverter(s1) + '\n')
+          sheet2.getRange("H17").setValue(cur2 + dateConverter(s2) + '\n')
+          sheet2.getRange("I17").setValue(cur3 + final + '\n')
+          // sheet2.getRange(`G${17}`).setValue(s1)
+          // sheet2.getRange(`H${17}`).setValue(s2)
+          // sheet2.getRange(`I${17}`).setValue(final)
+        }
+        if (month[0] == "05") {
+          let cur1 = sheet2.getRange("G19").getValue()
+          let cur2 = sheet2.getRange("H19").getValue()
+          let cur3 = sheet2.getRange("I19").getValue() as string
+
+          sheet2.getRange("G19").setValue(cur1 + dateConverter(s1) + '\n')
+          sheet2.getRange("H19").setValue(cur2 + dateConverter(s2) + '\n')
+          sheet2.getRange("I19").setValue(cur3 + final + '\n')
+          // sheet2.getRange(`G${19}`).setValue(s1)
+          // sheet2.getRange(`H${19}`).setValue(s2)
+          // sheet2.getRange(`I${19}`).setValue(final)
+        }
+
+        if (month[0] == "07") {
+          let cur1 = sheet2.getRange("G21").getValue()
+          let cur2 = sheet2.getRange("H21").getValue()
+          let cur3 = sheet2.getRange("I21").getValue() as string
+
+          sheet2.getRange("G21").setValue(cur1 + dateConverter(s1) + '\n')
+          sheet2.getRange("H21").setValue(cur2 + dateConverter(s2) + '\n')
+          sheet2.getRange("I21").setValue(cur3 + final + '\n')
+          // sheet2.getRange(`G${21}`).setValue(s1)
+          // sheet2.getRange(`H${21}`).setValue(s2)
+          // sheet2.getRange(`I${21}`).setValue(final)
+        }
+        if (month[0] == "08") {
+          let cur1 = sheet2.getRange("G22").getValue()
+          let cur2 = sheet2.getRange("H22").getValue()
+          let cur3 = sheet2.getRange("I22").getValue() as string
+
+          sheet2.getRange("G22").setValue(cur1 + dateConverter(s1) + '\n')
+          sheet2.getRange("H22").setValue(cur2 + dateConverter(s2) + '\n')
+          sheet2.getRange("I22").setValue(cur3 + final + '\n')
+
+          // sheet2.getRange(`G${22}`).setValue(s1)
+          // sheet2.getRange(`H${22}`).setValue(s2)
+          // sheet2.getRange(`I${22}`).setValue(final)
+        }
+        if (month[0] == "10") {
+          let cur1 = sheet2.getRange("G24").getValue()
+          let cur2 = sheet2.getRange("H24").getValue()
+          let cur3 = sheet2.getRange("I24").getValue() as string
+
+          sheet2.getRange("G24").setValue(cur1 + dateConverter(s1) + '\n')
+          sheet2.getRange("H24").setValue(cur2 + dateConverter(s2) + '\n')
+          sheet2.getRange("I24").setValue(cur3 + final + '\n')
+          // sheet2.getRange(`G${24}`).setValue(s1)
+          // sheet2.getRange(`H${24}`).setValue(s2)
+          // sheet2.getRange(`I${24}`).setValue(final)
+        }
+        if (month[0] == "12") {
+          let cur1 = sheet2.getRange("G26").getValue()
+          let cur2 = sheet2.getRange("H26").getValue()
+          let cur3 = sheet2.getRange("I26").getValue() as string
+
+          sheet2.getRange("G26").setValue(cur1 + dateConverter(s1) + '\n')
+          sheet2.getRange("H26").setValue(cur2 + dateConverter(s2) + '\n')
+          sheet2.getRange("I26").setValue(cur3 + final + '\n')
+          // sheet2.getRange(`G${26}`).setValue(s1)
+          // sheet2.getRange(`H${26}`).setValue(s2)
+          // sheet2.getRange(`I${26}`).setValue(final)
+        }
+
+
+
+      }
+      if (month[0] == "04" || month[0] == "06" || month[0] == "09" || month[0] == "11") {
+        const s2 = changeDay(s1, "30")
+        const di = (new Date(s2).getTime() - new Date(s1).getTime()) / (1000 * 3600 * 24) + 1
+        let holiday = checkLeavesOnHolidays(s1, s2, indianHolidays)
+        let week = checkWeekend(s1, s2)
+        let final = di - week - holiday;
+        if (month[0] == "04") {
+          let cur1 = sheet2.getRange("G18").getValue()
+          let cur2 = sheet2.getRange("H18").getValue()
+          let cur3 = sheet2.getRange("I18").getValue() as string
+
+          sheet2.getRange("G18").setValue(cur1 + dateConverter(s1) + '\n')
+          sheet2.getRange("H18").setValue(cur2 + dateConverter(s2) + '\n')
+          sheet2.getRange("I18").setValue(cur3 + final + '\n')
+          // sheet2.getRange(`G${18}`).setValue(s1)
+          // sheet2.getRange(`H${18}`).setValue(s2)
+          // sheet2.getRange(`I${18}`).setValue(final)
+        }
+        if (month[0] == "06") {
+          let cur1 = sheet2.getRange("G20").getValue()
+          let cur2 = sheet2.getRange("H20").getValue()
+          let cur3 = sheet2.getRange("I20").getValue() as string
+
+          sheet2.getRange("G20").setValue(cur1 + dateConverter(s1) + '\n')
+          sheet2.getRange("H20").setValue(cur2 + dateConverter(s2) + '\n')
+          sheet2.getRange("I20").setValue(cur3 + final + '\n')
+          // sheet2.getRange(`G${20}`).setValue(s1)
+          // sheet2.getRange(`H${20}`).setValue(s2)
+          // sheet2.getRange(`I${20}`).setValue(final)
+        }
+        if (month[0] == "09") {
+          let cur1 = sheet2.getRange("G23").getValue()
+          let cur2 = sheet2.getRange("H23").getValue()
+          let cur3 = sheet2.getRange("I23").getValue() as string
+
+          sheet2.getRange("G23").setValue(cur1 + dateConverter(s1) + '\n')
+          sheet2.getRange("H23").setValue(cur2 + dateConverter(s2) + '\n')
+          sheet2.getRange("I23").setValue(cur3 + final + '\n')
+          // sheet2.getRange(`G${23}`).setValue(s1)
+          // sheet2.getRange(`H${23}`).setValue(s2)
+          // sheet2.getRange(`I${23}`).setValue(final)
+        }
+        if (month[0] == "11") {
+          let cur1 = sheet2.getRange("G25").getValue()
+          let cur2 = sheet2.getRange("H25").getValue()
+          let cur3 = sheet2.getRange("I25").getValue() as string
+
+          sheet2.getRange("G25").setValue(cur1 + dateConverter(s1) + '\n')
+          sheet2.getRange("H25").setValue(cur2 + dateConverter(s2) + '\n')
+          sheet2.getRange("I25").setValue(cur3 + final + '\n')
+
+          // sheet2.getRange(`G${25}`).setValue(s1)
+          // sheet2.getRange(`H${25}`).setValue(s2)
+          // sheet2.getRange(`I${25}`).setValue(final)
+        }
+
+      }
+
+      //month 2---------------------------------------------------------
+      if (month1[0] == "02") {
+        if (Number(month1[2]) % 4 == 0) {
+          const s1 = changeDay(s2, "01")
+          const di = (new Date(s2).getTime() - new Date(s1).getTime()) / (1000 * 3600 * 24) + 1
+          let holiday = checkLeavesOnHolidays(s1, s2, indianHolidays)
+          let week = checkWeekend(s1, s2)
+          let final = di - week - holiday;
+          // sheet2.getRange(`G${16}`).setValue(s1)
+          // sheet2.getRange(`H${16}`).setValue(s2)
+          // sheet2.getRange(`I${16}`).setValue(final)
+          let cur1 = sheet2.getRange("G16").getValue()
+          let cur2 = sheet2.getRange("H16").getValue()
+          let cur3 = sheet2.getRange("I16").getValue() as string
+
+          sheet2.getRange("G16").setValue(cur1 + dateConverter(s1) + '\n')
+          sheet2.getRange("H16").setValue(cur2 + dateConverter(s2) + '\n')
+          sheet2.getRange("I16").setValue(cur3 + final + '\n')
+
+        }
+        if (Number(month1[2]) % 4 != 0) {
+          const s1 = changeDay(s2, "01")
+          const di = (new Date(s2).getTime() - new Date(s1).getTime()) / (1000 * 3600 * 24) + 1
+          let holiday = checkLeavesOnHolidays(s1, s2, indianHolidays)
+          let week = checkWeekend(s1, s2)
+          let final = di - week - holiday;
+          // sheet2.getRange(`G${16}`).setValue(s1)
+          // sheet2.getRange(`H${16}`).setValue(s2)
+          // sheet2.getRange(`I${16}`).setValue(final)
+          let cur1 = sheet2.getRange("G16").getValue()
+          let cur2 = sheet2.getRange("H16").getValue()
+          let cur3 = sheet2.getRange("I16").getValue() as string
+
+          sheet2.getRange("G16").setValue(cur1 + dateConverter(s1) + '\n')
+          sheet2.getRange("H16").setValue(cur2 + dateConverter(s2) + '\n')
+          sheet2.getRange("I16").setValue(cur3 + final + '\n')
+
+        }
+      }
+      if (month1[0] == "01" || month1[0] == "03" || month1[0] == "05" || month1[0] == "07" || month1[0] == "08" || month1[0] == "10" || month1[0] == "12") {
+        const s1 = changeDay(s2, "01")
+        const di = (new Date(s2).getTime() - new Date(s1).getTime()) / (1000 * 3600 * 24) + 1
+        let holiday = checkLeavesOnHolidays(s1, s2, indianHolidays)
+        let week = checkWeekend(s1, s2)
+        let final = di - week - holiday;
+
+        if (month1[0] == "01") {
+          // sheet2.getRange(`G${15}`).setValue(s1)
+          // sheet2.getRange(`H${15}`).setValue(s2)
+          // sheet2.getRange(`I${15}`).setValue(final)
+          let cur1 = sheet2.getRange("G15").getValue()
+          let cur2 = sheet2.getRange("H15").getValue()
+          let cur3 = sheet2.getRange("I15").getValue() as string
+
+          sheet2.getRange("G15").setValue(cur1 + dateConverter(s1) + '\n')
+          sheet2.getRange("H15").setValue(cur2 + dateConverter(s2) + '\n')
+          sheet2.getRange("I15").setValue(cur3 + final + '\n')
+        }
+        if (month1[0] == "03") {
+          // sheet2.getRange(`G${17}`).setValue(s1)
+          // sheet2.getRange(`H${17}`).setValue(s2)
+          // sheet2.getRange(`I${17}`).setValue(final)
+          let cur1 = sheet2.getRange("G17").getValue()
+          let cur2 = sheet2.getRange("H17").getValue()
+          let cur3 = sheet2.getRange("I17").getValue() as string
+
+          sheet2.getRange("G17").setValue(cur1 + dateConverter(s1) + '\n')
+          sheet2.getRange("H17").setValue(cur2 + dateConverter(s2) + '\n')
+          sheet2.getRange("I17").setValue(cur3 + final + '\n')
+        }
+        if (month1[0] == "05") {
+          // sheet2.getRange(`G${19}`).setValue(s1)
+          // sheet2.getRange(`H${19}`).setValue(s2)
+          // sheet2.getRange(`I${19}`).setValue(final)
+          let cur1 = sheet2.getRange("G19").getValue()
+          let cur2 = sheet2.getRange("H19").getValue()
+          let cur3 = sheet2.getRange("I19").getValue() as string
+
+          sheet2.getRange("G19").setValue(cur1 + dateConverter(s1) + '\n')
+          sheet2.getRange("H19").setValue(cur2 + dateConverter(s2) + '\n')
+          sheet2.getRange("I19").setValue(cur3 + final + '\n')
+        }
+
+        if (month1[0] == "07") {
+          // sheet2.getRange(`G${21}`).setValue(s1)
+          // sheet2.getRange(`H${21}`).setValue(s2)
+          // sheet2.getRange(`I${21}`).setValue(final)
+          let cur1 = sheet2.getRange("G21").getValue()
+          let cur2 = sheet2.getRange("H21").getValue()
+          let cur3 = sheet2.getRange("I21").getValue() as string
+
+          sheet2.getRange("G21").setValue(cur1 + dateConverter(s1) + '\n')
+          sheet2.getRange("H21").setValue(cur2 + dateConverter(s2) + '\n')
+          sheet2.getRange("I21").setValue(cur3 + final + '\n')
+        }
+        if (month1[0] == "08") {
+          // sheet2.getRange(`G${22}`).setValue(s1)
+          // sheet2.getRange(`H${22}`).setValue(s2)
+          // sheet2.getRange(`I${22}`).setValue(final)
+          let cur1 = sheet2.getRange("G22").getValue()
+          let cur2 = sheet2.getRange("H22").getValue()
+          let cur3 = sheet2.getRange("I22").getValue() as string
+
+          sheet2.getRange("G22").setValue(cur1 + dateConverter(s1) + '\n')
+          sheet2.getRange("H22").setValue(cur2 + dateConverter(s2) + '\n')
+          sheet2.getRange("I22").setValue(cur3 + final + '\n')
+        }
+        if (month1[0] == "10") {
+          // sheet2.getRange(`G${24}`).setValue(s1)
+          // sheet2.getRange(`H${24}`).setValue(s2)
+          // sheet2.getRange(`I${24}`).setValue(final)
+          let cur1 = sheet2.getRange("G24").getValue()
+          let cur2 = sheet2.getRange("H24").getValue()
+          let cur3 = sheet2.getRange("I24").getValue() as string
+
+          sheet2.getRange("G24").setValue(cur1 + dateConverter(s1) + '\n')
+          sheet2.getRange("H24").setValue(cur2 + dateConverter(s2) + '\n')
+          sheet2.getRange("I24").setValue(cur3 + final + '\n')
+        }
+        if (month1[0] == "12") {
+          // sheet2.getRange(`G${26}`).setValue(s1)
+          // sheet2.getRange(`H${26}`).setValue(s2)
+          // sheet2.getRange(`I${26}`).setValue(final)
+          let cur1 = sheet2.getRange("G26").getValue()
+          let cur2 = sheet2.getRange("H26").getValue()
+          let cur3 = sheet2.getRange("I26").getValue() as string
+
+          sheet2.getRange("G26").setValue(cur1 + dateConverter(s1) + '\n')
+          sheet2.getRange("H26").setValue(cur2 + dateConverter(s2) + '\n')
+          sheet2.getRange("I26").setValue(cur3 + final + '\n')
+        }
+
+
+
+      }
+      if (month1[0] == "04" || month1[0] == "06" || month1[0] == "09" || month1[0] == "11") {
+        const s1 = changeDay(s2, "01")
+        const di = (new Date(s2).getTime() - new Date(s1).getTime()) / (1000 * 3600 * 24) + 1
+        let holiday = checkLeavesOnHolidays(s1, s2, indianHolidays)
+        let week = checkWeekend(s1, s2)
+        let final = di - week - holiday;
+        if (month1[0] == "04") {
+          // sheet2.getRange(`G${18}`).setValue(s1)
+          // sheet2.getRange(`H${18}`).setValue(s2)
+          // sheet2.getRange(`I${18}`).setValue(final)
+          let cur1 = sheet2.getRange("G18").getValue()
+          let cur2 = sheet2.getRange("H18").getValue()
+          let cur3 = sheet2.getRange("I18").getValue() as string
+
+          sheet2.getRange("G18").setValue(cur1 + dateConverter(s1) + '\n')
+          sheet2.getRange("H18").setValue(cur2 + dateConverter(s2) + '\n')
+          sheet2.getRange("I18").setValue(cur3 + final + '\n')
+        }
+        if (month1[0] == "06") {
+          // sheet2.getRange(`G${20}`).setValue(s1)
+          // sheet2.getRange(`H${20}`).setValue(s2)
+          // sheet2.getRange(`I${20}`).setValue(final)
+          let cur1 = sheet2.getRange("G20").getValue()
+          let cur2 = sheet2.getRange("H20").getValue()
+          let cur3 = sheet2.getRange("I20").getValue() as string
+
+          sheet2.getRange("G20").setValue(cur1 + dateConverter(s1) + '\n')
+          sheet2.getRange("H20").setValue(cur2 + dateConverter(s2) + '\n')
+          sheet2.getRange("I20").setValue(cur3 + final + '\n')
+        }
+        if (month1[0] == "09") {
+          // sheet2.getRange(`G${23}`).setValue(s1)
+          // sheet2.getRange(`H${23}`).setValue(s2)
+          // sheet2.getRange(`I${23}`).setValue(final)
+          let cur1 = sheet2.getRange("G23").getValue()
+          let cur2 = sheet2.getRange("H23").getValue()
+          let cur3 = sheet2.getRange("I23").getValue() as string
+
+          sheet2.getRange("G23").setValue(cur1 + (s1) + '\n')
+          sheet2.getRange("H23").setValue(cur2 + (s2) + '\n')
+          sheet2.getRange("I23").setValue(cur3 + final + '\n')
+        }
+        if (month1[0] == "11") {
+          // sheet2.getRange(`G${25}`).setValue(s1)
+          // sheet2.getRange(`H${25}`).setValue(s2)
+          // sheet2.getRange(`I${25}`).setValue(final)
+          let cur1 = sheet2.getRange("G25").getValue()
+          let cur2 = sheet2.getRange("H25").getValue()
+          let cur3 = sheet2.getRange("I25").getValue() as string
+
+          sheet2.getRange("G25").setValue(cur1 + dateConverter(s1) + '\n')
+          sheet2.getRange("H25").setValue(cur2 + dateConverter(s2) + '\n')
+          sheet2.getRange("I25").setValue(cur3 + final + '\n')
+        }
+
+      }
+      if (Number(month1[0]) - Number(month[0]) > 1)//this is for to find the missing months inbetween two dates and there from and to leaves dates, no of leaves
+      {
+        for (let i = Number(month[0]) + 1; i < Number(month1[0]); i++) {
+          if (i === 1) {
+            let a = dateFormat(sheet2.getRange("B15").getValue() as number)
+            let b = dateFormat(sheet2.getRange("C15").getValue() as number)
+            sheet2.getRange("I15").setValue(sheet2.getRange("D15").getValue())
+            sheet2.getRange("G15").setValue(a)
+            sheet2.getRange("H15").setValue(b)
+          }
+          if (i === 2) {
+            let a = dateFormat(sheet2.getRange("B16").getValue() as number)
+            let b = dateFormat(sheet2.getRange("C16").getValue() as number)
+            sheet2.getRange("I16").setValue(sheet2.getRange("D16").getValue())
+            sheet2.getRange("G16").setValue(a)
+            sheet2.getRange("H16").setValue(b)
+          }
+          if (i === 3) {
+            let a = dateFormat(sheet2.getRange("B17").getValue() as number)
+            let b = dateFormat(sheet2.getRange("C17").getValue() as number)
+            sheet2.getRange("I17").setValue(sheet2.getRange("D17").getValue())
+            sheet2.getRange("G17").setValue(a)
+            sheet2.getRange("H17").setValue(b)
+          }
+          if (i === 4) {
+            let a = dateFormat(sheet2.getRange("B18").getValue() as number)
+            let b = dateFormat(sheet2.getRange("C18").getValue() as number)
+            sheet2.getRange("I18").setValue(sheet2.getRange("D18").getValue())
+            sheet2.getRange("G18").setValue(a)
+            sheet2.getRange("H18").setValue(b)
+          }
+          if (i === 5) {
+            let a = dateFormat(sheet2.getRange("B19").getValue() as number)
+            let b = dateFormat(sheet2.getRange("C19").getValue() as number)
+            sheet2.getRange("I19").setValue(sheet2.getRange("D19").getValue())
+            sheet2.getRange("G19").setValue(a)
+            sheet2.getRange("H19").setValue(b)
+          }
+          if (i === 6) {
+            let a = dateFormat(sheet2.getRange("B20").getValue() as number)
+            let b = dateFormat(sheet2.getRange("C20").getValue() as number)
+            sheet2.getRange("I20").setValue(sheet2.getRange("D20").getValue())
+            sheet2.getRange("G20").setValue(a)
+            sheet2.getRange("H20").setValue(b)
+          }
+          if (i === 7) {
+            let a = dateFormat(sheet2.getRange("B21").getValue() as number)
+            let b = dateFormat(sheet2.getRange("C21").getValue() as number)
+            sheet2.getRange("I21").setValue(sheet2.getRange("D21").getValue())
+            sheet2.getRange("G21").setValue(a)
+            sheet2.getRange("H21").setValue(b)
+          }
+          if (i === 8) {
+            let a = dateFormat(sheet2.getRange("B22").getValue() as number)
+            let b = dateFormat(sheet2.getRange("C22").getValue() as number)
+            sheet2.getRange("I22").setValue(sheet2.getRange("D15").getValue())
+            sheet2.getRange("G22").setValue(a)
+            sheet2.getRange("H22").setValue(b)
+          }
+          if (i === 9) {
+            let a = dateFormat(sheet2.getRange("B23").getValue() as number)
+            let b = dateFormat(sheet2.getRange("C23").getValue() as number)
+            sheet2.getRange("I23").setValue(sheet2.getRange("D23").getValue())
+            sheet2.getRange("G23").setValue(a)
+            sheet2.getRange("H23").setValue(b)
+          }
+          if (i === 10) {
+            let a = dateFormat(sheet2.getRange("B24").getValue() as number)
+            let b = dateFormat(sheet2.getRange("C24").getValue() as number)
+            sheet2.getRange("I24").setValue(sheet2.getRange("D24").getValue())
+            sheet2.getRange("G24").setValue(a)
+            sheet2.getRange("H24").setValue(b)
+          }
+          if (i === 11) {
+            let a = dateFormat(sheet2.getRange("B25").getValue() as number)
+            let b = dateFormat(sheet2.getRange("C25").getValue() as number)
+            sheet2.getRange("I25").setValue(sheet2.getRange("D25").getValue())
+            sheet2.getRange("G25").setValue(a)
+            sheet2.getRange("H25").setValue(b)
+          }
+          if (i === 12) {
+            let a = dateFormat(sheet2.getRange("B26").getValue() as number)
+            let b = dateFormat(sheet2.getRange("C26").getValue() as number)
+            sheet2.getRange("I26").setValue(sheet2.getRange("D26").getValue())
+            sheet2.getRange("G26").setValue(a)
+            sheet2.getRange("H26").setValue(b)
+          }
+
+
+        }
+      }
+
+    }
+
+
+
+
+  }
+  for(let i=0;i<12;i++){
+    let val1=sheet2.getRange(`G${15+i}`).getValue().toString().trim()
+    let val2 = sheet2.getRange(`H${15 + i}`).getValue().toString().trim()
+    let val3 = sheet2.getRange(`I${15 + i}`).getValue().toString().trim()
+    sheet2.getRange(`G${15 + i}`).setValue(val1)
+    sheet2.getRange(`H${15 + i}`).setValue(val2)
+    sheet2.getRange(`I${15 + i}`).setValue(val3)
+  }
+//   for(let i=0;i<12;i++){
+//     let val11 = sheet2.getRange(`G${15 + i}`).getValue().toString().trim()
+//     let val22 = sheet2.getRange(`H${15 + i}`).getValue().toString().trim()
+//     let val33 = sheet2.getRange(`I${15 + i}`).getValue().toString().trim()
+// if(val11===""&&val22===""&&val33==="")
+//     sheet2.getRange(`G${15 + i}`).setValue("          -")
+//     sheet2.getRange(`H${15 + i}`).setValue("          -")
+//     sheet2.getRange(`I${15 + i}`).setValue(0)
+    
+//   }
+
+
+}
+// returning the date in MM-DD-YYYY
+function dateFormat(data: number): string {
+  const s1 = new Date(Date.UTC(1899, 11, 30));
+  const s2 = new Date(s1.getTime() + data * 86400000)
+
+  const day = String(s2.getUTCDate()).padStart(2, '0')
+  const month = String(s2.getUTCMonth() + 1).padStart(2, '0')
+  const year = s2.getUTCFullYear()
+
+  return `${month}-${day}-${year}`
+}
+
+// replacing the days
+function changeDay(date: string, day: string): string {
+  const part = date.split("-")
+  part[1] = day
+  return part.join("-");
+
+}
+function checkWeekend(d1: string, d2: string): number {
+  let count = 0
+  const st = new Date(d1)
+  const en = new Date(d2)
+  for (let date = st; date <= en; date.setDate(date.getDate() + 1)) {
+    const dayOf = date.getDay()
+    if (dayOf === 0) {
+      count++
+    }
+    if (dayOf === 6) {
+      count++
+    }
+  }
+  return count
+}
+
+function checkLeavesOnHolidays(startDate: string, endDate: string, holidays: string[]): number {
+  // Convert start and end dates to milliseconds for comparison
+  const start = new Date(startDate).getTime();
+  const end = new Date(endDate).getTime();
+
+  // Filter holidays that fall within the range and count them
+  const holidayCount = holidays.filter(holiday => {
+    const holidayTime = new Date(holiday).getTime();
+    return holidayTime >= start && holidayTime <= end;
+  }).length;
+
+  return holidayCount;
+}
+// this function converting the MM-DD-YYYY format to DD-MM-YYYY format
+function dateConverter(date:string):string{
+  let d1=date.split("-")
+  let day=d1[1]
+  let month=d1[0]
+  let year=d1[2]
+
+  return `${day}-${month}-${year}`
+
+}
